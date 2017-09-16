@@ -1,0 +1,34 @@
+image: docker:latest
+
+services:
+  - docker:dind
+
+stages:
+  - build
+  - publish
+
+build:
+  stage: build
+  script:
+    - docker build
+        --pull
+        --tag registry.gitlab.com/peterkuczera/docker-oauth2-proxy/oauth2_proxy:$CI_COMMIT_SHA
+        oauth2_proxy
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
+    - docker push registry.gitlab.com/peterkuczera/docker-oauth2-proxy/oauth2_proxy:$CI_COMMIT_SHA
+
+publish:
+  stage: publish
+  script:
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.com
+    - docker pull registry.gitlab.com/peterkuczera/docker-oauth2-proxy/oauth2_proxy:$CI_COMMIT_SHA
+    - docker tag
+        registry.gitlab.com/peterkuczera/docker-oauth2-proxy/oauth2_proxy:$CI_COMMIT_SHA
+        registry.gitlab.com/peterkuczera/docker-oauth2-proxy/oauth2_proxy:2.2.0
+    - docker tag
+        registry.gitlab.com/peterkuczera/docker-oauth2-proxy/oauth2_proxy:$CI_COMMIT_SHA
+        registry.gitlab.com/peterkuczera/docker-oauth2-proxy/oauth2_proxy:latest
+    - docker push registry.gitlab.com/peterkuczera/docker-oauth2-proxy/oauth2_proxy:2.2.0
+    - docker push registry.gitlab.com/peterkuczera/docker-oauth2-proxy/oauth2_proxy:latest
+  only:
+    - master
